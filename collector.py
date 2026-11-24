@@ -246,7 +246,8 @@ def main():
         print("Ticketmaster skipped (no TICKETMASTER_API_KEY set)")
 
     if not all_rows:
-        raise SystemExit("No data collected. Check that your API keys are set.")
+        print("No API data collected this run (no keys set, or no prices returned).")
+        return
 
     # Keep one row per event per run, in case an event shows up in two categories
     unique = {}

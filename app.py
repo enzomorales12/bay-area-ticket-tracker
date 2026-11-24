@@ -19,10 +19,15 @@ SAMPLE_DATA = Path("data/sample_prices.csv")
 st.set_page_config(page_title="Buy or Wait", page_icon="🎟️", layout="wide")
 
 
+MANUAL_DATA = Path("data/manual_prices.csv")
+
+
 @st.cache_data(ttl=600)
 def load():
-    if REAL_DATA.exists():
-        return pd.read_csv(REAL_DATA), False
+    real = [pd.read_csv(p) for p in (REAL_DATA, MANUAL_DATA) if p.exists()]
+    real = [d for d in real if not d.empty]
+    if real:
+        return pd.concat(real, ignore_index=True), False
     return pd.read_csv(SAMPLE_DATA), True
 
 
@@ -36,8 +41,9 @@ st.caption("Bay Area concerts, festivals, Warriors and 49ers games. Know when to
 if is_sample:
     st.warning("Showing SAMPLE data so you can see how the app works. Real prices appear once the collector has run.")
 
-# Resale data (SeatGeek) drives the verdicts; Ticketmaster gives face value.
-resale = df[df["source"] == "seatgeek"]
+# Resale data (SeatGeek or hand-logged) drives the verdicts; Ticketmaster gives face value.
+RESALE_SOURCES = ["seatgeek", "manual"]
+resale = df[df["source"].isin(RESALE_SOURCES) & df["lowest_price"].notna()]
 face = (
     df[df["source"] == "ticketmaster"]
     .sort_values("snapshot_utc")

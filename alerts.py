@@ -39,6 +39,7 @@ from io import StringIO
 import pandas as pd
 
 PRICES = Path("data/prices.csv")
+MANUAL = Path("data/manual_prices.csv")
 WATCHLIST = Path("watchlist.csv")
 SENT_LOG = Path("data/alerts_sent.csv")
 
@@ -52,7 +53,7 @@ TODAY = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 def latest_prices(prices: pd.DataFrame) -> pd.DataFrame:
     """Most recent resale snapshot for each upcoming event."""
-    resale = prices[prices["source"] == "seatgeek"]
+    resale = prices[prices["source"].isin(["seatgeek", "manual"])]
     if resale.empty:
         resale = prices
     resale = resale.sort_values("snapshot_utc")
@@ -118,11 +119,12 @@ def log_sent(keys: list):
 
 
 def main():
-    if not PRICES.exists():
+    frames = [pd.read_csv(p) for p in (PRICES, MANUAL) if p.exists()]
+    if not frames:
         print("No prices yet. Nothing to check.")
         return
 
-    prices = pd.read_csv(PRICES)
+    prices = pd.concat(frames, ignore_index=True)
     secret_list = os.environ.get("WATCHLIST_CSV", "").strip()
     if secret_list:
         watchlist = pd.read_csv(StringIO(secret_list))

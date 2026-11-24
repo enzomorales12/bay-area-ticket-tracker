@@ -8,7 +8,17 @@ Tracks resale and face-value ticket prices for Bay Area events (Warriors, 49ers,
 2. Each run adds one row per event to `data/prices.csv`, including `days_until_event`, so you can see how prices change as the event gets closer.
 3. GitHub Actions runs it automatically at about 8 AM and 6 PM Pacific, even when your laptop is off.
 
-> **Data source status (Nov 2026):** SeatGeek's public API returns event details but leaves the price fields empty for new developer keys, so resale prices need another source. Ticketmaster face-value prices still work. See the project notes for the options being considered.
+> **Data source status (Nov 2026):** SeatGeek's public API returns event details but leaves the price fields empty for new developer keys. Until an API with resale prices is available, prices are logged by hand once a day in a Google Sheet (see "Hand-logged prices" below), and the app treats them like any other resale price. Ticketmaster face-value prices still come from its free API.
+
+## Hand-logged prices
+
+The **Ticket Price Log** Google Sheet has three tabs:
+
+- **Price Log:** one row per check. Type the date, pick the event from the dropdown, enter the lowest price and the site. The event ID, event date, days until event and category fill in on their own.
+- **Events:** the watchlist (Warriors, 49ers and Sharks home games, concerts and festivals). Add a row here to start tracking a new event.
+- **How to use:** the logging steps.
+
+`import_log.py` turns the sheet into `data/manual_prices.csv` on every scheduled run. To connect it, publish the **Price Log** and **Events** tabs as CSV (File → Share → Publish to web) and save the two links as the secrets `PRICE_LOG_CSV_URL` and `EVENTS_CSV_URL`.
 
 ## Setup
 

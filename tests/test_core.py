@@ -93,3 +93,33 @@ def test_inactive_watch_is_skipped():
     watch = pd.DataFrame([{"name": "Sam", "email": "s@x.com", "event_search": "warriors",
                            "target_price": 60, "active": "no"}])
     assert find_alerts(prices, watch, set()) == []
+
+
+# ---- import_log.py -------------------------------------------------------
+
+def test_import_log_converts_sheet_rows():
+    from io import StringIO
+    from import_log import to_price_rows
+
+    events = pd.read_csv(StringIO(
+        "Event ID,Event,Category,Event date,Start time,Venue,City,SeatGeek link\n"
+        "18495005,Warriors vs Clippers,NBA,2026-11-29,5:30 PM,Chase Center,San Francisco,https://seatgeek.com/x\n"
+        "18191892,Ultra Music Festival (3-day pass),Festival,2027-03-26,TBD,Bayfront Park,Miami,https://seatgeek.com/y\n"
+    ), dtype={"Event ID": str})
+    log = pd.read_csv(StringIO(
+        "Logged on,Event,Lowest price ($),Site,Notes,Event ID,Event date,Days until event,Category\n"
+        "2026-11-23,Warriors vs Clippers,$84.00,SeatGeek,,18495005,2026-11-29,6,NBA\n"
+        "2026-11-23,Warriors vs Clippers,$79.00,StubHub,,18495005,2026-11-29,6,NBA\n"
+        "2026-11-24,Ultra Music Festival (3-day pass),\"$1,050.00\",SeatGeek,,18191892,2027-03-26,122,Festival\n"
+        ",,,,,,,,\n"
+    ))
+    rows = to_price_rows(log, events)
+    assert len(rows) == 2  # same-day duplicate collapses to the lower price; blank row dropped
+    warriors = rows[rows["event_id"] == "18495005"].iloc[0]
+    assert warriors["lowest_price"] == 79.0
+    assert warriors["days_until_event"] == 6
+    assert warriors["category"] == "nba"
+    assert warriors["event_datetime_local"] == "2026-11-29T17:30:00"
+    ultra = rows[rows["event_id"] == "18191892"].iloc[0]
+    assert ultra["lowest_price"] == 1050.0
+    assert ultra["category"] == "music_festival"

@@ -37,7 +37,8 @@ def judge(history: pd.DataFrame) -> dict:
     days_left = history["days_until_event"].dropna()
     days_left = int(days_left.iloc[-1]) if len(days_left) else None
 
-    if change <= -TREND_THRESHOLD and (days_left is None or days_left > 1):
+    still_falling = prices.iloc[-1] < prices.iloc[-2]  # a drop that has flattened out isn't a reason to wait
+    if change <= -TREND_THRESHOLD and still_falling and (days_left is None or days_left > 1):
         reason = f"Down {abs(change):.0%} over the last few checks"
         if supply_up:
             reason += " and more tickets are being listed"

@@ -28,10 +28,19 @@ jobs:
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
         run: python collector.py
 
+      - name: Check price alerts (dry run unless ALERTS_ENABLED is true)
+        env:
+          ALERTS_ENABLED: ${{ vars.ALERTS_ENABLED }}
+          ALERT_EMAIL_FROM: ${{ secrets.ALERT_EMAIL_FROM }}
+          ALERT_EMAIL_PASSWORD: ${{ secrets.ALERT_EMAIL_PASSWORD }}
+          WATCHLIST_CSV: ${{ secrets.WATCHLIST_CSV }}
+        run: python alerts.py
+
       - name: Save data to the repo
         run: |
           git config user.name "price-bot"
           git config user.email "price-bot@users.noreply.github.com"
           git add data/prices.csv
+          if [ -f data/alerts_sent.csv ]; then git add data/alerts_sent.csv; fi
           git commit -m "Price snapshot $(date -u +'%Y-%m-%d %H:%M')" || echo "Nothing new"
           git push
